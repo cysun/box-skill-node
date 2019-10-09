@@ -1,3 +1,4 @@
+require("dotenv").config();
 var express = require("express");
 var cookieParser = require("cookie-parser");
 
@@ -8,10 +9,11 @@ morgan.token("body", (req, res) => {
 });
 
 var app = express();
+app.set("trust proxy", process.env.PROXY == "true");
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(morgan(":method :url :date[clf] :body", { immediate: true }));
+app.use(morgan(":method :remote-addr :date[clf] :body", { immediate: true }));
 
 app.all("/", (req, res) => {
   res.json({ message: "hello!" });
