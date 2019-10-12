@@ -1,5 +1,7 @@
 "use strict";
 
+const startsWith = require("lodash/startsWith");
+
 const logger = require("bunyan").createLogger({
   name: "EventsHandler",
   level: process.env.LOG_LEVEL
@@ -17,52 +19,42 @@ const AZURE_MEDIA_ERROR_JOB_STATE = "Error";
 
 function AzureEvents() {}
 
-AzureEvents.isAzureEvent = function(body) {
-  return body && body.eventType && body.eventType.startsWith("Microsoft");
+// This method should be called before any other isXXXEvent() to ensure that
+// the request contains Azure event(s) to begin with.
+AzureEvents.isAzureEvent = function(events) {
+  return events && events[0] && startsWith(events[0].eventType, "Microsoft");
 };
 
-AzureEvents.isSubscriptionValidationEvent = function(body) {
+AzureEvents.isSubscriptionValidationEvent = function(event) {
+  return event.eventType === AZURE_EVENTGRID_SUBSCRIPTION_VALIDATION_EVENT;
+};
+
+AzureEvents.isSubscriptionDeletionEvent = function(event) {
+  return event.eventType === AZURE_EVENTGRID_SUBSCRIPTION_DELETION_EVENT;
+};
+
+AzureEvents.isJobStateChangedEvent = function(event) {
+  return event.eventType === AZURE_MEDIA_JOB_STATE_CHANGE_EVENT;
+};
+
+AzureEvents.isJobFinishedEvent = function(event) {
   return (
-    body &&
-    body.eventType &&
-    body.eventType === AZURE_EVENTGRID_SUBSCRIPTION_VALIDATION_EVENT
+    AzureEvents.isJobStateChangedEvent(event) &&
+    event.data.state === AZURE_MEDIA_FINISHED_JOB_STATE
   );
 };
 
-AzureEvents.isSubscriptionDeletionEvent = function(body) {
+AzureEvents.isJobCanceledEvent = function(event) {
   return (
-    body &&
-    body.eventType &&
-    body.eventType === AZURE_EVENTGRID_SUBSCRIPTION_DELETION_EVENT
+    AzureEvents.isJobStateChangedEvent(event) &&
+    event.data.state === AZURE_MEDIA_CANCELED_JOB_STATE
   );
 };
 
-AzureEvents.isJobStateChangedEvent = function(body) {
+AzureEvents.isJobErrorEvent = function(event) {
   return (
-    body &&
-    body.eventType &&
-    body.eventType === AZURE_MEDIA_JOB_STATE_CHANGE_EVENT
-  );
-};
-
-AzureEvents.isJobFinishedEvent = function(body) {
-  return (
-    AzureEvents.isJobStateChangedEvent(body) &&
-    body.data.state === AZURE_MEDIA_FINISHED_JOB_STATE
-  );
-};
-
-AzureEvents.isJobCanceledEvent = function(body) {
-  return (
-    AzureEvents.isJobStateChangedEvent(body) &&
-    body.data.state === AZURE_MEDIA_CANCELED_JOB_STATE
-  );
-};
-
-AzureEvents.isJobErrorEvent = function(body) {
-  return (
-    AzureEvents.isJobStateChangedEvent(body) &&
-    body.data.state === AZURE_MEDIA_ERROR_JOB_STATE
+    AzureEvents.isJobStateChangedEvent(event) &&
+    event.data.state === AZURE_MEDIA_ERROR_JOB_STATE
   );
 };
 
@@ -70,15 +62,24 @@ AzureEvents.isJobErrorEvent = function(body) {
 function AzureEventsHandler(req, res, next) {
   if (!AzureEvents.isAzureEvent(req.body)) return next();
 
-  logger.info({ label: "Azure Event Received" }, req.body);
+  logger.info({
+    label: "Azure event received",
+    eventType: req.body[0].eventType
+  });
 
-  if (AzureEvents.isSubscriptionValidationEvent(req.body)) {
+  if (AzureEvents.isSubscriptionValidationEvent(req.body[0])) {
     res.status(200).send({
-      validationResponse: body.data.validationCode
+      validationResponse: req.body[0].data.validationCode
     });
   } else {
     res.status(204).end();
   }
 }
 
-module.exports = { AzureEvents, AzureEventsHandler };
+function BoxEvents() {}
+
+BoxEvents.isSkillInvocationEvent = function(event) {
+  return event && event.type && event.type === "skill_invocatio";
+};
+
+module.exports = { AzureEvents, AzureEventsHandler, BoxEvents };

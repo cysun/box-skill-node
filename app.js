@@ -6,8 +6,9 @@ var requestLogger = require("morgan");
 
 var express = require("express");
 
-const EventsHandler = require("./ams/events-handler");
 const VideoAnalyzer = require("./ams/video-analyzer");
+const { AzureEventsHandler, BoxEvents } = require("./ams/events-handler");
+const { FilesReader } = require("./box/skills-kit-2.0");
 
 // Set up request logger
 requestLogger.token("body", (req, res) => {
@@ -24,11 +25,16 @@ app.use(
 );
 
 // Handle requests
-app.all("/", EventsHandler.AzureEventsHandler, async (req, res) => {
-  var videoAnalyzer = new VideoAnalyzer();
+app.all("/", AzureEventsHandler, async (req, res) => {
+  if (BoxEvents.isSkillInvocationEvent(req.body))
+    res.status(200).send("Unrecognized request");
+
+  let filesReader = new FilesReader(req.body);
+  let videoAnalyzer = new VideoAnalyzer(filesReader.getFileContext());
   await videoAnalyzer.init();
-  // await videoAnalyzer.createJob();
-  res.json({ message: "hello!" });
+  await videoAnalyzer.createEventSubscription();
+  //await videoAnalyzer.createJob();
+  res.status(200).send("Event request processed");
 });
 
 module.exports = app;

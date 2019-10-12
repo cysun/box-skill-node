@@ -9,11 +9,16 @@
     "@azure/arm-eventgrid": "^4.0.0",
     "@azure/arm-mediaservices": "^6.0.0",
     "@azure/ms-rest-nodeauth": "^2.0.5",
+    "box-node-sdk": "^1.29.1",
     "bunyan": "^1.8.12",
     "dotenv": "^8.1.0",
     "express": "~4.16.1",
+    "jimp": "^0.8.4",
+    "lodash": "^4.17.15",
     "morgan": "~1.9.1",
+    "path": "^0.12.7",
     "prettyjson": "^1.2.1",
+    "url-template": "^2.0.8",
     "uuid": "^3.3.3"
   },
   "devDependencies": {
