@@ -1,13 +1,15 @@
 "use strict";
 
 const msRestNodeAuth = require("@azure/ms-rest-nodeauth");
-const { AzureMediaServices, Transform } = require("@azure/arm-mediaservices");
+const { AzureMediaServices} = require("@azure/arm-mediaservices");
 const uuidv4 = require("uuid/v4");
 
 const logger = require("bunyan").createLogger({
   name: "VideoAnalyzer",
   level: process.env.LOG_LEVEL
 });
+
+const EventSubscription = require("./event-subscription");
 
 //const AUDIO_ANALYZER_PRESET_ODATATYPE = '#Microsoft.Media.AudioAnalyzerPreset';
 const VIDEO_ANALYZER_PRESET_ODATATYPE = "#Microsoft.Media.VideoAnalyzerPreset";
@@ -43,11 +45,14 @@ VideoAnalyzer.prototype.init = async function() {
     { noRetryPolicy: true }
   );
 
-  // this._service = await this._client.mediaservices.get(
-  //   process.env.RESOURCE_GROUP,
-  //   process.env.ACCOUNT_NAME
-  // );
+  this._service = await this._client.mediaservices.get(
+    process.env.RESOURCE_GROUP,
+    process.env.ACCOUNT_NAME
+  );
 
+  this._eventSubscription = new EventSubscription(this._credentials, this._service.id);
+  this._eventSubscription.createOrUpdate();
+  
   this._transform = await this._client.transforms.get(
     process.env.RESOURCE_GROUP,
     process.env.ACCOUNT_NAME,

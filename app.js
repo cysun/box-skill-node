@@ -6,6 +6,7 @@ var requestLogger = require("morgan");
 
 var express = require("express");
 
+const EventsHandler = require("./ams/events-handler");
 const VideoAnalyzer = require("./ams/video-analyzer");
 
 // Set up request logger
@@ -23,10 +24,10 @@ app.use(
 );
 
 // Handle requests
-app.all("/", async (req, res) => {
+app.all("/", EventsHandler.AzureEventsHandler, async (req, res) => {
   var videoAnalyzer = new VideoAnalyzer();
   await videoAnalyzer.init();
-  await videoAnalyzer.createJob();
+  // await videoAnalyzer.createJob();
   res.json({ message: "hello!" });
 });
 

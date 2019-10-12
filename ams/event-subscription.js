@@ -3,7 +3,7 @@
 const { EventGridManagementClient } = require("@azure/arm-eventgrid");
 
 const logger = require("bunyan").createLogger({
-  name: "EventManager",
+  name: "EventSubscription",
   level: process.env.LOG_LEVEL
 });
 
@@ -25,26 +25,22 @@ const SUBSCRIPTION_INFO = {
 
 // EventSubscription
 function EventSubscription(credentials, subscriptionScope) {
+  this._subscriptionScope = subscriptionScope;
   this._client = new EventGridManagementClient(
     credentials,
     process.env.SUBSCRIPTION_ID
   );
-  logger.debug(_client);
-
-  this._subscriptionScope = subscriptionScope;
-  logger.debug(_subscriptionScope);
 }
 
 EventSubscription.prototype.createOrUpdate = async function() {
   try {
-    await this._client.eventSubscriptions.get(
+    this._subscription = await this._client.eventSubscriptions.get(
       this._subscriptionScope,
       SUBSCRIPTION_NAME
     );
-    logger.info("Event subscription already exists");
+    logger.info("Event subscription exists");
   } catch (err) {
-    logger.info("Create a new event subscription");
-    await this._client.eventSubscriptions.createOrUpdate(
+    this._subscription = await this._client.eventSubscriptions.createOrUpdate(
       this._subscriptionScope,
       SUBSCRIPTION_NAME,
       SUBSCRIPTION_INFO
