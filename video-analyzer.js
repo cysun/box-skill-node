@@ -53,6 +53,7 @@ VideoAnalyzer.prototype.toCorrelationData = function() {
     id: this._jobId,
     name: this._jobName,
     asset: this._outputAssetName,
+    transform: this._transformName,
     createdTime: Date.now()
   };
   var fileContext = cloneDeep(this._fileContext);
