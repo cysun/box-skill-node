@@ -23,7 +23,6 @@ const ASSET_PREFIX = "box-skill-output";
 // VideoAnalyzer
 function VideoAnalyzer(fileContext) {
   this._fileContext = fileContext;
-  logger.debug({ label: "Box FileContext" }, this._fileContext);
   this._jobId = uuidv4();
   this._jobName = `${JOB_PREFIX}-${this._jobId}`;
   this._outputAssetName = `${ASSET_PREFIX}-${this._jobId}`;
@@ -53,6 +52,7 @@ VideoAnalyzer.prototype.toCorrelationData = function() {
   var job = {
     id: this._jobId,
     name: this._jobName,
+    asset: this._outputAssetName,
     createdTime: Date.now()
   };
   var fileContext = cloneDeep(this._fileContext);

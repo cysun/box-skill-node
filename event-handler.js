@@ -2,8 +2,10 @@
 
 const startsWith = require("lodash/startsWith");
 
+const ResultProcessor = require("./result-processor");
+
 const logger = require("bunyan").createLogger({
-  name: "EventsHandler",
+  name: "EventHandler",
   level: process.env.LOG_LEVEL
 });
 
@@ -58,8 +60,21 @@ AzureEvents.isJobErrorEvent = function(event) {
   );
 };
 
+async function handleJobFinishedEvent(event) {
+  let data = event.data.correlationData;
+  let job = JSON.parse(data.job);
+  let fileContext = JSON.parse(data.fileContext);
+  fileContext.fileWriteToken = JSON.parse(data.fileWriteToken);
+
+  logger.info({ job, fileContext }, "Job Finished");
+
+  const resultProcessor = new ResultProcessor(job, fileContext);
+  await resultProcessor.init();
+  await resultProcessor.processResult();
+}
+
 // This is an Express middleware handling Azure events
-function AzureEventsHandler(req, res, next) {
+async function AzureEventHandler(req, res, next) {
   if (!AzureEvents.isAzureEvent(req.body)) return next();
 
   logger.info({
@@ -72,6 +87,11 @@ function AzureEventsHandler(req, res, next) {
       validationResponse: req.body[0].data.validationCode
     });
   } else {
+    if (AzureEvents.isJobFinishedEvent(req.body[0])) {
+      // Do not await here so event request can be acknowleged immediately;
+      // otherwise Azure would re-send the event which causes duplicates
+      handleJobFinishedEvent(req.body[0]);
+    }
     res.status(204).end();
   }
 }
@@ -82,4 +102,4 @@ BoxEvents.isSkillInvocationEvent = function(event) {
   return event && event.type && event.type === "skill_invocatio";
 };
 
-module.exports = { AzureEvents, AzureEventsHandler, BoxEvents };
+module.exports = { AzureEvents, AzureEventHandler, BoxEvents };

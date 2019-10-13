@@ -7,7 +7,7 @@ var requestLogger = require("morgan");
 var express = require("express");
 
 const VideoAnalyzer = require("./video-analyzer");
-const { AzureEventsHandler, BoxEvents } = require("./events-handler");
+const { AzureEventHandler, BoxEvents } = require("./event-handler");
 const { FilesReader } = require("./skills-kit-2.0");
 
 // Set up request logger
@@ -25,7 +25,7 @@ app.use(
 );
 
 // Handle requests
-app.all("/", AzureEventsHandler, async (req, res) => {
+app.all("/", AzureEventHandler, async (req, res) => {
   if (BoxEvents.isSkillInvocationEvent(req.body))
     res.status(200).send("Unrecognized request");
 
