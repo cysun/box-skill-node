@@ -8,7 +8,7 @@
   "dependencies": {
     "@azure/arm-eventgrid": "^4.0.0",
     "@azure/arm-mediaservices": "^6.0.0",
-    "@azure/ms-rest-nodeauth": "^2.0.5",
+    "@azure/ms-rest-nodeauth": "^3.0.8",
     "azure-storage": "^2.10.3",
     "box-node-sdk": "^1.29.1",
     "bunyan": "^1.8.12",
